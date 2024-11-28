@@ -1,0 +1,145 @@
+#include <stdio.h>
+#include <string.h>
+
+struct player {
+    char name[20];
+    char team[20];
+};
+
+struct bowler {
+    char style[10];
+    char arm[5];
+    struct player ply;
+};
+
+struct batsman {
+    char order[20];   
+    char handed[10];  
+    struct bowler ply2;
+};
+
+void insertPlayer(FILE *file, struct player p) {
+    fprintf(file, "%s,%s\n", p.name, p.team);
+}
+
+void insertBowler(FILE *file, struct bowler b) {
+    fprintf(file, "%s,%s,%s,%s,%s\n", b.ply.name, b.ply.team, b.style, b.arm, b.ply.name);
+}
+
+void insertBatsman(FILE *file, struct batsman b) {
+    fprintf(file, "%s,%s,%s,%s,%s,%s\n", b.ply2.ply.name, b.ply2.ply.team, b.order, b.handed, b.ply2.style, b.ply2.arm);
+}
+
+void displayPlayers(FILE *file) {
+    char line[100];
+    while (fgets(line, sizeof(line), file)) {
+        printf("%s", line);
+    }
+}
+
+void updatePlayer(FILE *file, const char *name, struct player updatedPlayer) {
+    FILE *tempFile = fopen("temp.txt", "w");
+    char line[100];
+
+    fseek(file, 0, SEEK_SET);
+
+    while (fgets(line, sizeof(line), file)) {
+        char playerName[20], team[20];
+        sscanf(line, "%19[^,],%19s", playerName, team);
+        if (strcmp(playerName, name) == 0) {
+            fprintf(tempFile, "%s,%s\n", updatedPlayer.name, updatedPlayer.team);
+        } else {
+            fprintf(tempFile, "%s", line);
+        }
+    }
+
+    fclose(file);
+    fclose(tempFile);
+    remove("players.txt");
+    rename("temp.txt", "players.txt");
+
+
+    file = fopen("players.txt", "a+");
+}
+
+void deletePlayer(FILE *file, const char *name) {
+    FILE *tempFile = fopen("temp.txt", "w");
+    char line[100];
+
+   
+    fseek(file, 0, SEEK_SET);
+
+    while (fgets(line, sizeof(line), file)) {
+        char playerName[20], team[20];
+        sscanf(line, "%19[^,],%19s", playerName, team);
+        if (strcmp(playerName, name) != 0) {
+            fprintf(tempFile, "%s", line);
+        }
+    }
+
+    fclose(file);
+    fclose(tempFile);
+    remove("players.txt");
+    rename("temp.txt", "players.txt");
+
+   
+    file = fopen("players.txt", "a+");
+}
+
+int main() {
+    FILE *file = fopen("players.txt", "a+");
+    if (!file) {
+        printf("Unable to open file\n");
+        return 1;
+    }
+
+    struct player player1 = {"Sharjeel", "TeamA"};
+    struct player player2 = {"Naeem", "TeamB"};
+    struct player player3 = {"Sami", "TeamA"};
+    struct player player4 = {"Raheel", "TeamC"};
+    struct player player5 = {"Adeel", "TeamD"};
+
+    struct bowler bowler1 = {"Pacer", "Right", {"Sami", "TeamA"}};
+    struct bowler bowler2 = {"Seamer", "Left", {"Naeem", "TeamB"}};
+    struct bowler bowler3 = {"Spinner", "Right", {"Sharjeel", "TeamA"}};
+
+    struct batsman batsman1 = {"Top Order", "Righty", bowler1};
+    struct batsman batsman2 = {"Middle Order", "Lefty", bowler2};
+
+    insertPlayer(file, player1);
+    insertPlayer(file, player2);
+    insertPlayer(file, player3);
+    insertPlayer(file, player4);
+    insertPlayer(file, player5);
+
+    insertBowler(file, bowler1);
+    insertBowler(file, bowler2);
+    insertBowler(file, bowler3);
+
+    insertBatsman(file, batsman1);
+    insertBatsman(file, batsman2);
+
+    printf("Displaying players from the file:\n");
+    fseek(file, 0, SEEK_SET);
+    displayPlayers(file);
+
+    struct player updatedPlayer = {"Ahmed", "Team B "};
+    printf("\nUpdating player 'Naeem' to 'Ahmed':\n");
+    fseek(file, 0, SEEK_SET);
+    updatePlayer(file, "Naeem", updatedPlayer);
+
+    printf("\nDisplaying players after update:\n");
+    fseek(file, 0, SEEK_SET);
+    displayPlayers(file);
+
+    printf("\nDeleting player 'Sharjeel':\n");
+    fseek(file, 0, SEEK_SET);
+    deletePlayer(file, "Sharjeel");
+
+    printf("\nDisplaying players after delete:\n");
+    fseek(file, 0, SEEK_SET);
+    displayPlayers(file);
+
+    fclose(file);
+    return 0;
+}
